@@ -4,12 +4,13 @@
 
 use edsm_dumps_model::model::body::StarSubType;
 use edsm_dumps_model::model::system::Coords;
+use log::debug;
 use serde::Deserialize;
 use serde_json::from_slice;
 use surf::get;
 use url::Url;
 
-use crate::{Error, SystemSpecifier};
+use crate::{check_empty, Result, SystemSpecifier};
 
 /// Get system's information.
 ///
@@ -25,7 +26,7 @@ use crate::{Error, SystemSpecifier};
 /// # async_std::task::sleep(std::time::Duration::from_secs(3)).await;
 /// # Ok(()) }) }
 /// ```
-pub async fn system(system: impl Into<SystemSpecifier<'_>>) -> Result<SystemInfo, Error> {
+pub async fn system(system: impl Into<SystemSpecifier<'_>>) -> Result<SystemInfo> {
     let mut url =
         Url::parse("https://www.edsm.net/api-v1/system").expect("failed to parse base url");
     system.into().apply(&mut url);
@@ -38,11 +39,10 @@ pub async fn system(system: impl Into<SystemSpecifier<'_>>) -> Result<SystemInfo
         .append_pair("showPrimaryStar", "1")
         .append_pair("includeHidden", "1");
 
+    debug!("Requesting {}", url);
     let bytes = get(&url).recv_bytes().await?;
 
-    if bytes == b"{}" {
-        return Err(Error::EmptyResponse);
-    }
+    check_empty(&bytes)?;
 
     let v: SystemInfo = from_slice(&bytes)?;
     Ok(v)
@@ -79,4 +79,23 @@ pub struct PrimaryStar {
     pub typ: StarSubType,
     /// `true` if star is scoopable
     pub is_scoopable: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Error;
+
+    #[async_std::test]
+    async fn system_not_found() {
+        let res = system("Not Exist XX-X x0").await;
+
+        if let Err(Error::EmptyResponse) = res {
+            // Ok
+        } else {
+            panic!("Invalid result: {:?}", res);
+        }
+
+        async_std::task::sleep(std::time::Duration::from_secs(3)).await;
+    }
 }

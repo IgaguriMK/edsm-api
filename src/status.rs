@@ -5,22 +5,33 @@
 use std::hash::Hash;
 
 use chrono::{DateTime, Utc};
+use log::debug;
 use serde::Deserialize;
 use serde_json::from_slice;
 use surf::get;
 
 use crate::dec::date_format;
-use crate::Error;
+use crate::{check_empty, Result};
 
 /// Get game server's status.
-pub async fn elite_server() -> Result<EliteServer, Error> {
-    let bytes = get("https://www.edsm.net/api-status-v1/elite-server")
-        .recv_bytes()
-        .await?;
+/// # Example
+///
+/// ```
+/// # fn main() -> anyhow::Result<()> { async_std::task::block_on(async {
+/// #
+/// let status = edsm_api::status::elite_server().await?;
+///
+/// println!("{}", status.message);
+/// #
+/// # async_std::task::sleep(std::time::Duration::from_secs(3)).await;
+/// # Ok(()) }) }
+/// ```
+pub async fn elite_server() -> Result<EliteServer> {
+    let url = "https://www.edsm.net/api-status-v1/elite-server";
+    debug!("Requesting {}", url);
+    let bytes = get(url).recv_bytes().await?;
 
-    if bytes == b"{}" {
-        return Err(Error::EmptyResponse);
-    }
+    check_empty(&bytes)?;
 
     let v: EliteServer = from_slice(&bytes)?;
     Ok(v)

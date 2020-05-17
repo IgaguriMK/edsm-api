@@ -25,6 +25,9 @@ pub enum Error {
     DecodeError(#[from] serde_json::Error),
 }
 
+/// Result type for edsm-api.
+pub type Result<T> = std::result::Result<T, Error>;
+
 /// A type specifies system.
 ///
 /// The most of EDSM API allows specify system by-name and by-ID.
@@ -60,5 +63,13 @@ impl<'a> From<&'a str> for SystemSpecifier<'a> {
 impl<'a> From<u64> for SystemSpecifier<'a> {
     fn from(v: u64) -> SystemSpecifier<'a> {
         SystemSpecifier::Id(v)
+    }
+}
+
+fn check_empty(bytes: &[u8]) -> Result<()> {
+    if bytes == b"{}" || bytes == b"[]" {
+        Err(Error::EmptyResponse)
+    } else {
+        Ok(())
     }
 }
