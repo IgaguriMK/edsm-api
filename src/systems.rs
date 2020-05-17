@@ -12,6 +12,19 @@ use url::Url;
 use crate::{Error, SystemSpecifier};
 
 /// Get system's information.
+///
+/// # Example
+///
+/// ```
+/// # fn main() -> anyhow::Result<()> { async_std::task::block_on(async {
+/// #
+/// let system_info = edsm_api::systems::system(27).await?;
+///
+/// assert_eq!(&system_info.name, "Sol");
+/// #
+/// # async_std::task::sleep(std::time::Duration::from_secs(3)).await;
+/// # Ok(()) }) }
+/// ```
 pub async fn system(system: impl Into<SystemSpecifier<'_>>) -> Result<SystemInfo, Error> {
     let mut url =
         Url::parse("https://www.edsm.net/api-v1/system").expect("failed to parse base url");
