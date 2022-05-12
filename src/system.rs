@@ -18,6 +18,7 @@ use crate::{check_empty, Result, SystemSpecifier};
 /// ```
 /// # fn main() -> anyhow::Result<()> { async_std::task::block_on(async {
 /// #
+/// use edsm_dumps_model::model::body::BodyT;
 /// let bodies = edsm_api::system::bodies("Sol").await?;
 ///
 /// assert_eq!(bodies.bodies[1].name(), "Mercury");
